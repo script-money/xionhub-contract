@@ -8,7 +8,7 @@ pub mod multitest;
 
 use contract::{
     exec::{create_hub, subscribe_to_hub},
-    query::{query_hub, query_user_subscriptions},
+    query::{query_hub, query_hub_addresses, query_user_subscriptions},
 };
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use error::ContractError;
@@ -50,5 +50,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             page,
             page_size,
         } => query_user_subscriptions(deps, user, page, page_size),
+        QueryMsg::HubAddresses { start_after, limit } => {
+            query_hub_addresses(deps, start_after, limit)
+        }
     }
 }

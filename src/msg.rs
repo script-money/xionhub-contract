@@ -20,4 +20,8 @@ pub enum QueryMsg {
         page: u32,
         page_size: u32,
     },
+    HubAddresses {
+        start_after: u32,
+        limit: u32,
+    },
 }

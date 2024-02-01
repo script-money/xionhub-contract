@@ -26,12 +26,16 @@ fn test_create_hub() {
     assert_eq!(
         resp,
         Hub {
-            creator: creator,
+            creator: creator.clone(),
             name: "Test Channel".to_string(),
             payment: coin(0, XION),
             subscribers: vec![]
         }
     );
+
+    let resp2 = contract.query_hub_addresses(&app, 0, 10).unwrap();
+    assert_eq!(resp2.len(), 1);
+    assert_eq!(resp2, vec![creator.to_string()]);
 }
 
 #[test]

@@ -108,7 +108,20 @@ impl XionHubContract {
                 page_size,
             },
         )?;
+        Ok(resp)
+    }
 
+    #[track_caller]
+    pub fn query_hub_addresses(
+        &self,
+        app: &App,
+        start_after: u32,
+        limit: u32,
+    ) -> StdResult<Vec<String>> {
+        let resp: Vec<String> = app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::HubAddresses { start_after, limit },
+        )?;
         Ok(resp)
     }
 }

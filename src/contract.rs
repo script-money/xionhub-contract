@@ -9,7 +9,7 @@ pub mod exec {
 
     use crate::{
         error::ContractError,
-        state::{Hub, HUBS, SUBSCRIPTIONS},
+        state::{Hub, HUBS, HUB_ADDRESS, SUBSCRIPTIONS},
     };
 
     pub fn create_hub(
@@ -32,6 +32,10 @@ pub mod exec {
             subscribers: vec![],
         };
         HUBS.save(deps.storage, &sender_addr_str, &new_hub)?;
+
+        let mut hub_addresses = HUB_ADDRESS.load(deps.storage).unwrap_or_default();
+        hub_addresses.insert(0, sender_addr_str); // Insert the new address at the beginning of the vector
+        HUB_ADDRESS.save(deps.storage, &hub_addresses)?;
 
         Ok(Response::default())
     }
@@ -80,7 +84,7 @@ pub mod exec {
 }
 
 pub mod query {
-    use crate::state::{Hub, HUBS, SUBSCRIPTIONS};
+    use crate::state::{Hub, HUBS, HUB_ADDRESS, SUBSCRIPTIONS};
     use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Order, StdResult};
 
     pub fn query_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
@@ -112,5 +116,26 @@ pub mod query {
 
         // Serialize the query result
         to_json_binary(&hubs_info.iter().map(|hub| &hub.name).collect::<Vec<_>>())
+    }
+
+    pub fn query_hub_addresses(deps: Deps, start_after: u32, limit: u32) -> StdResult<Binary> {
+        let hub_addresses = HUB_ADDRESS.load(deps.storage)?;
+        let start_pos = if start_after == 0 {
+            0
+        } else {
+            hub_addresses
+                .iter()
+                .rposition(|a| a == &hub_addresses[start_after as usize - 1])
+                .unwrap_or(0)
+        };
+        let end_pos = std::cmp::min(start_pos + limit as usize, hub_addresses.len());
+        let paged_hub_addresses: Vec<String> = hub_addresses
+            .iter()
+            .skip(start_pos)
+            .take(end_pos - start_pos)
+            .cloned()
+            .collect();
+
+        to_json_binary(&paged_hub_addresses)
     }
 }

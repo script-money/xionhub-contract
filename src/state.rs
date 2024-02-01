@@ -15,4 +15,4 @@ pub struct Hub {
 pub const HUBS: Map<&str, Hub> = Map::new("hubs");
 pub const SUBSCRIPTIONS: Map<(&Addr, &str), bool> = Map::new("subscriptions");
 
-pub const HUB_NAMES: Item<Vec<String>> = Item::new("hub_names");
+pub const HUB_ADDRESS: Item<Vec<String>> = Item::new("hub_address");
