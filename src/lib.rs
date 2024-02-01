@@ -6,7 +6,10 @@ mod state;
 #[cfg(any(test, feature = "tests"))]
 pub mod multitest;
 
-use contract::{exec::create_hub, query::query_hub};
+use contract::{
+    exec::{create_hub, subscribe_to_hub},
+    query::{query_hub, query_user_subscriptions},
+};
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use error::ContractError;
 use msg::{ExecuteMsg, QueryMsg};
@@ -31,7 +34,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateHub { name, payment } => create_hub(deps, env, info, name, payment),
+        ExecuteMsg::CreateHub { hub_name, need_pay } => {
+            create_hub(deps, env, info, hub_name, need_pay)
+        }
+        ExecuteMsg::SubscribeToHub { hub_addr } => subscribe_to_hub(deps, info, hub_addr),
     }
 }
 
@@ -39,5 +45,10 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Hub { creator } => query_hub(deps, creator),
+        QueryMsg::UserSubscriptions {
+            user,
+            page,
+            page_size,
+        } => query_user_subscriptions(deps, user, page, page_size),
     }
 }

@@ -6,10 +6,18 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateHub { name: String, payment: Coin },
+    CreateHub { hub_name: String, need_pay: Coin },
+    SubscribeToHub { hub_addr: String },
 }
 
 #[cw_serde]
 pub enum QueryMsg {
-    Hub { creator: Addr },
+    Hub {
+        creator: Addr,
+    },
+    UserSubscriptions {
+        user: Addr,
+        page: u32,
+        page_size: u32,
+    },
 }

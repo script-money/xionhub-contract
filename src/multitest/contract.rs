@@ -47,16 +47,35 @@ impl XionHubContract {
         &self,
         app: &mut App,
         sender: &Addr,
-        name: &str,
-        payment: Coin,
-        funds: &[Coin],
+        hub_name: &str,
+        need_pay: Coin,
     ) -> Result<(), ContractError> {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
             &ExecuteMsg::CreateHub {
-                name: name.to_string(),
-                payment,
+                hub_name: hub_name.to_string(),
+                need_pay,
+            },
+            &[],
+        )
+        .map_err(|err| err.downcast().unwrap())
+        .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn subscribe_to_hub(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        hub_addr: &str,
+        funds: &[Coin],
+    ) -> Result<(), ContractError> {
+        app.execute_contract(
+            sender.clone(),
+            self.0.clone(),
+            &ExecuteMsg::SubscribeToHub {
+                hub_addr: hub_addr.to_string(),
             },
             funds,
         )
@@ -72,6 +91,25 @@ impl XionHubContract {
                 creator: creator.clone(),
             },
         )
+    }
+    #[track_caller]
+    pub fn query_user_subscriptions(
+        &self,
+        app: &App,
+        user: &Addr,
+        page: u32,
+        page_size: u32,
+    ) -> StdResult<Vec<String>> {
+        let resp: Vec<String> = app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::UserSubscriptions {
+                user: user.clone(),
+                page,
+                page_size,
+            },
+        )?;
+
+        Ok(resp)
     }
 }
 

@@ -11,4 +11,13 @@ pub enum ContractError {
 
     #[error("CreatorAlreadyHasHub")]
     CreatorAlreadyHasHub,
+
+    #[error("HubNotFound")]
+    HubNotFound,
+
+    #[error("AlreadySubscribed")]
+    AlreadySubscribed,
+
+    #[error("InsufficientFunds")]
+    InsufficientFunds,
 }
