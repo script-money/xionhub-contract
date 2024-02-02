@@ -20,4 +20,10 @@ pub enum ContractError {
 
     #[error("InsufficientFunds")]
     InsufficientFunds,
+
+    #[error("PostNotFound")]
+    PostNotFound,
+
+    #[error("PostAlreadyExists")]
+    PostAlreadyExists { id: String },
 }

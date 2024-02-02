@@ -7,8 +7,10 @@ mod state;
 pub mod multitest;
 
 use contract::{
-    exec::{create_hub, subscribe_to_hub},
-    query::{query_hub, query_hub_addresses, query_user_subscriptions},
+    exec::{create_hub, create_post, like_post, subscribe_to_hub},
+    query::{
+        query_hub, query_hub_addresses, query_hub_posts, query_post_likes, query_user_subscriptions,
+    },
 };
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use error::ContractError;
@@ -37,7 +39,15 @@ pub fn execute(
         ExecuteMsg::CreateHub { hub_name, need_pay } => {
             create_hub(deps, env, info, hub_name, need_pay)
         }
-        ExecuteMsg::SubscribeToHub { hub_addr } => subscribe_to_hub(deps, info, hub_addr),
+        ExecuteMsg::SubscribeToHub { hub_addr } => {
+            subscribe_to_hub(deps, info, hub_addr.into_string())
+        }
+        ExecuteMsg::CreatePost {
+            post_id,
+            title,
+            content,
+        } => create_post(deps, env, info, post_id, title, content),
+        ExecuteMsg::LikePost { post_id } => like_post(deps, info, post_id),
     }
 }
 
@@ -45,13 +55,16 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Hub { creator } => query_hub(deps, creator),
-        QueryMsg::UserSubscriptions {
-            user,
-            page,
-            page_size,
-        } => query_user_subscriptions(deps, user, page, page_size),
-        QueryMsg::HubAddresses { start_after, limit } => {
-            query_hub_addresses(deps, start_after, limit)
+        QueryMsg::UserSubscriptions { user, page, size } => {
+            query_user_subscriptions(deps, user, page, size)
         }
+        QueryMsg::HubAddresses { page, size } => query_hub_addresses(deps, page, size),
+        QueryMsg::HubPosts {
+            user_addr,
+            hub_addr,
+            page,
+            size,
+        } => query_hub_posts(deps, user_addr, hub_addr.into_string(), page, size),
+        QueryMsg::PostLikes { post_id } => query_post_likes(deps, post_id),
     }
 }

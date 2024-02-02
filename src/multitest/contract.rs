@@ -3,10 +3,11 @@ use crate::{
     execute, instantiate,
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
     query,
-    state::Hub,
+    state::{Hub, Post},
 };
 use cosmwasm_std::{Addr, Coin, StdResult};
 use cw_multi_test::{App, ContractWrapper, Executor};
+use uuid::Uuid;
 
 pub struct XionHubContract(Addr);
 
@@ -68,16 +69,58 @@ impl XionHubContract {
         &self,
         app: &mut App,
         sender: &Addr,
-        hub_addr: &str,
+        hub_addr: &Addr,
         funds: &[Coin],
     ) -> Result<(), ContractError> {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
             &ExecuteMsg::SubscribeToHub {
-                hub_addr: hub_addr.to_string(),
+                hub_addr: hub_addr.clone(),
             },
             funds,
+        )
+        .map_err(|err| err.downcast().unwrap())
+        .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn create_post(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        post_id: Uuid,
+        title: &str,
+        content: &str,
+    ) -> Result<(), ContractError> {
+        app.execute_contract(
+            sender.clone(),
+            self.0.clone(),
+            &ExecuteMsg::CreatePost {
+                post_id: post_id.to_string(),
+                title: title.to_string(),
+                content: content.to_string(),
+            },
+            &[],
+        )
+        .map_err(|err| err.downcast().unwrap())
+        .map(|_| ())
+    }
+
+    #[track_caller]
+    pub fn like_post(
+        &self,
+        app: &mut App,
+        sender: &Addr,
+        post_id: &Uuid,
+    ) -> Result<(), ContractError> {
+        app.execute_contract(
+            sender.clone(),
+            self.0.clone(),
+            &ExecuteMsg::LikePost {
+                post_id: post_id.to_string(),
+            },
+            &[],
         )
         .map_err(|err| err.downcast().unwrap())
         .map(|_| ())
@@ -97,15 +140,15 @@ impl XionHubContract {
         &self,
         app: &App,
         user: &Addr,
-        page: u32,
-        page_size: u32,
+        page: usize,
+        size: usize,
     ) -> StdResult<Vec<String>> {
         let resp: Vec<String> = app.wrap().query_wasm_smart(
             self.0.clone(),
             &QueryMsg::UserSubscriptions {
                 user: user.clone(),
                 page,
-                page_size,
+                size,
             },
         )?;
         Ok(resp)
@@ -115,14 +158,44 @@ impl XionHubContract {
     pub fn query_hub_addresses(
         &self,
         app: &App,
-        start_after: u32,
-        limit: u32,
+        page: usize,
+        size: usize,
     ) -> StdResult<Vec<String>> {
-        let resp: Vec<String> = app.wrap().query_wasm_smart(
+        let resp: Vec<String> = app
+            .wrap()
+            .query_wasm_smart(self.0.clone(), &QueryMsg::HubAddresses { page, size })?;
+        Ok(resp)
+    }
+
+    #[track_caller]
+    pub fn query_hub_posts(
+        &self,
+        app: &App,
+        user_addr: &Addr,
+        hub_addr: &Addr,
+        page: usize,
+        size: usize,
+    ) -> StdResult<Vec<Post>> {
+        let resp: Vec<Post> = app.wrap().query_wasm_smart(
             self.0.clone(),
-            &QueryMsg::HubAddresses { start_after, limit },
+            &QueryMsg::HubPosts {
+                user_addr: user_addr.clone(),
+                hub_addr: hub_addr.clone(),
+                page,
+                size,
+            },
         )?;
         Ok(resp)
+    }
+
+    #[track_caller]
+    pub fn query_post_likes(&self, app: &App, post_id: &Uuid) -> StdResult<u64> {
+        app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::PostLikes {
+                post_id: post_id.to_string(),
+            },
+        )
     }
 }
 

@@ -9,7 +9,7 @@ pub mod exec {
 
     use crate::{
         error::ContractError,
-        state::{Hub, HUBS, HUB_ADDRESS, SUBSCRIPTIONS},
+        state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS},
     };
 
     pub fn create_hub(
@@ -30,6 +30,7 @@ pub mod exec {
             name: hub_name,
             payment: need_pay,
             subscribers: vec![],
+            posts: vec![],
         };
         HUBS.save(deps.storage, &sender_addr_str, &new_hub)?;
 
@@ -37,7 +38,7 @@ pub mod exec {
         hub_addresses.insert(0, sender_addr_str); // Insert the new address at the beginning of the vector
         HUB_ADDRESS.save(deps.storage, &hub_addresses)?;
 
-        Ok(Response::default())
+        Ok(Response::new().add_attribute("method", "create_hub"))
     }
 
     pub fn subscribe_to_hub(
@@ -79,12 +80,57 @@ pub mod exec {
         hub.subscribers.push(user_addr.clone());
         HUBS.save(deps.storage, &hub_addr, &hub)?;
 
-        Ok(Response::default())
+        Ok(Response::new().add_attribute("method", "subscribe_to_hub"))
+    }
+
+    pub fn create_post(
+        deps: DepsMut,
+        env: Env,
+        info: MessageInfo,
+        post_id: String,
+        title: String,
+        content: String,
+    ) -> Result<Response, ContractError> {
+        let hub_id = info.sender.as_str();
+
+        // Check if the hub exists before proceeding
+        if !HUBS.has(deps.storage, hub_id) {
+            return Err(ContractError::HubNotFound {});
+        }
+
+        let mut hub: Hub = HUBS.load(deps.storage, hub_id)?;
+
+        let post = Post {
+            id: post_id.clone(),
+            title,
+            content,
+            updated: env.block.time.seconds(),
+        };
+
+        hub.posts.insert(0, post);
+
+        HUBS.save(deps.storage, hub_id, &hub)?;
+        LIKES.save(deps.storage, &post_id, &0u64)?;
+
+        Ok(Response::new().add_attribute("method", "create_post"))
+    }
+
+    pub fn like_post(
+        deps: DepsMut,
+        _info: MessageInfo,
+        post_id: String,
+    ) -> Result<Response, ContractError> {
+        let mut likes = LIKES.load(deps.storage, &post_id)?;
+
+        likes += 1;
+
+        LIKES.save(deps.storage, &post_id, &likes)?;
+        Ok(Response::new().add_attribute("method", "like_post"))
     }
 }
 
 pub mod query {
-    use crate::state::{Hub, HUBS, HUB_ADDRESS, SUBSCRIPTIONS};
+    use crate::state::{Hub, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS};
     use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Order, StdResult};
 
     pub fn query_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
@@ -95,8 +141,8 @@ pub mod query {
     pub fn query_user_subscriptions(
         deps: Deps,
         user_addr: Addr,
-        page: u32,
-        page_size: u32,
+        page: usize,
+        size: usize,
     ) -> StdResult<Binary> {
         let subscriptions: Vec<String> = SUBSCRIPTIONS
             .prefix(&user_addr)
@@ -104,10 +150,9 @@ pub mod query {
             .filter_map(|result| result.ok())
             .collect();
 
-        // Pagination logic
-        let start = (page.saturating_sub(1) * page_size) as usize; // Corrected to handle underflow when page is 0
-        let end = start.saturating_add(page_size as usize); // Use saturating_add to prevent potential overflow
-
+        // Adjusted pagination logic to handle page 1 as the first page
+        let start = page.saturating_sub(1).saturating_mul(size);
+        let end = start.saturating_add(size);
         // Query HUB_NAMES and HUBS based on subscriptions and pagination
         let hubs_info: Vec<Hub> = subscriptions[start..end.min(subscriptions.len())]
             .iter()
@@ -118,24 +163,54 @@ pub mod query {
         to_json_binary(&hubs_info.iter().map(|hub| &hub.name).collect::<Vec<_>>())
     }
 
-    pub fn query_hub_addresses(deps: Deps, start_after: u32, limit: u32) -> StdResult<Binary> {
+    pub fn query_hub_addresses(deps: Deps, page: usize, size: usize) -> StdResult<Binary> {
         let hub_addresses = HUB_ADDRESS.load(deps.storage)?;
-        let start_pos = if start_after == 0 {
-            0
-        } else {
-            hub_addresses
-                .iter()
-                .rposition(|a| a == &hub_addresses[start_after as usize - 1])
-                .unwrap_or(0)
-        };
-        let end_pos = std::cmp::min(start_pos + limit as usize, hub_addresses.len());
+        let start = page.saturating_sub(1).saturating_mul(size);
+        let end = std::cmp::min(start + size, hub_addresses.len());
         let paged_hub_addresses: Vec<String> = hub_addresses
             .iter()
-            .skip(start_pos)
-            .take(end_pos - start_pos)
+            .skip(start)
+            .take(end - start)
             .cloned()
             .collect();
 
         to_json_binary(&paged_hub_addresses)
+    }
+
+    pub fn query_hub_posts(
+        deps: Deps,
+        user_addr: Addr, // TODO: change to signature verify
+        hub_addr: String,
+        page: usize,
+        size: usize,
+    ) -> StdResult<Binary> {
+        // Check if the user is subscribed to the hub
+        let is_subscribed = SUBSCRIPTIONS
+            .load(deps.storage, (&user_addr, &hub_addr))
+            .unwrap_or(false);
+
+        let hub = HUBS.load(deps.storage, &hub_addr)?;
+
+        let posts = if is_subscribed {
+            // If subscribed, paginate normally
+            let start = page.saturating_sub(1).saturating_mul(size);
+            let end = start.saturating_add(size).min(hub.posts.len());
+
+            if start >= hub.posts.len() {
+                Vec::new()
+            } else {
+                hub.posts[start..end].to_vec()
+            }
+        } else {
+            // If not subscribed, return only the latest post
+            hub.posts.iter().take(1).cloned().collect()
+        };
+
+        to_json_binary(&posts)
+    }
+
+    pub fn query_post_likes(deps: Deps, post_id: String) -> StdResult<Binary> {
+        let likes = LIKES.load(deps.storage, &post_id)?;
+        to_json_binary(&likes)
     }
 }
