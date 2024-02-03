@@ -130,7 +130,7 @@ pub mod exec {
 }
 
 pub mod query {
-    use crate::state::{Hub, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS};
+    use crate::state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS};
     use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Order, StdResult};
 
     pub fn query_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
@@ -164,7 +164,10 @@ pub mod query {
     }
 
     pub fn query_hub_addresses(deps: Deps, page: u64, size: u64) -> StdResult<Binary> {
-        let hub_addresses = HUB_ADDRESS.load(deps.storage)?;
+        let hub_addresses = match HUB_ADDRESS.may_load(deps.storage)? {
+            Some(addresses) => addresses,
+            None => return to_json_binary(&Vec::<String>::new()), // Return an empty vector if HUB_ADDRESS is empty
+        };
         let start = page.saturating_sub(1).saturating_mul(size) as usize;
         let end = std::cmp::min(start + size as usize, hub_addresses.len());
         let paged_hub_addresses: Vec<String> = hub_addresses
@@ -179,7 +182,7 @@ pub mod query {
 
     pub fn query_hub_posts(
         deps: Deps,
-        user_addr: Addr, // TODO: change to signature verify
+        user_addr: Addr,
         hub_addr: String,
         page: u64,
         size: u64,
@@ -189,7 +192,10 @@ pub mod query {
             .load(deps.storage, (&user_addr, &hub_addr))
             .unwrap_or(false);
 
-        let hub = HUBS.load(deps.storage, &hub_addr)?;
+        let hub = match HUBS.may_load(deps.storage, &hub_addr) {
+            Ok(Some(hub)) => hub,
+            _ => return to_json_binary(&Vec::<Post>::new()), // Return empty Vec if hub not found or error occurs
+        };
 
         let posts = if is_subscribed {
             // If subscribed, paginate normally

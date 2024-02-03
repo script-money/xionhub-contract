@@ -270,3 +270,48 @@ fn test_like_post() {
     let resp = contract.query_post_likes(&app, &post_id).unwrap();
     assert_eq!(resp, 1);
 }
+
+#[test]
+fn test_query_zero_hubs() {
+    let mut app = App::default();
+    let owner = Addr::unchecked("owner");
+
+    let code_id = XionHubContract::store_code(&mut app);
+    let contract =
+        XionHubContract::instantiate(&mut app, code_id, &owner, "XionHub contract", None).unwrap();
+
+    let resp = contract.query_hub_addresses(&app, 1, 10).unwrap();
+    assert_eq!(resp.len(), 0);
+}
+
+#[test]
+fn test_query_hub_zero_posts() {
+    let mut app = App::default();
+    let owner = Addr::unchecked("owner");
+    let creator = Addr::unchecked("creator");
+
+    let code_id = XionHubContract::store_code(&mut app);
+    let contract =
+        XionHubContract::instantiate(&mut app, code_id, &owner, "XionHub contract", None).unwrap();
+
+    let resp = contract
+        .query_hub_posts(&app, &creator, &creator, 1, 10)
+        .unwrap();
+    assert_eq!(resp.len(), 0);
+}
+
+#[test]
+fn test_query_user_zero_subscriptions() {
+    let mut app = App::default();
+    let owner = Addr::unchecked("owner");
+    let user = Addr::unchecked("user");
+
+    let code_id = XionHubContract::store_code(&mut app);
+    let contract =
+        XionHubContract::instantiate(&mut app, code_id, &owner, "XionHub contract", None).unwrap();
+
+    let resp = contract
+        .query_user_subscriptions(&app, &user, 1, 10)
+        .unwrap();
+    assert_eq!(resp.len(), 0);
+}
