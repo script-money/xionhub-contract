@@ -140,8 +140,8 @@ impl XionHubContract {
         &self,
         app: &App,
         user: &Addr,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     ) -> StdResult<Vec<String>> {
         let resp: Vec<String> = app.wrap().query_wasm_smart(
             self.0.clone(),
@@ -155,12 +155,7 @@ impl XionHubContract {
     }
 
     #[track_caller]
-    pub fn query_hub_addresses(
-        &self,
-        app: &App,
-        page: usize,
-        size: usize,
-    ) -> StdResult<Vec<String>> {
+    pub fn query_hub_addresses(&self, app: &App, page: u64, size: u64) -> StdResult<Vec<String>> {
         let resp: Vec<String> = app
             .wrap()
             .query_wasm_smart(self.0.clone(), &QueryMsg::HubAddresses { page, size })?;
@@ -173,8 +168,8 @@ impl XionHubContract {
         app: &App,
         user_addr: &Addr,
         hub_addr: &Addr,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     ) -> StdResult<Vec<Post>> {
         let resp: Vec<Post> = app.wrap().query_wasm_smart(
             self.0.clone(),

@@ -141,8 +141,8 @@ pub mod query {
     pub fn query_user_subscriptions(
         deps: Deps,
         user_addr: Addr,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     ) -> StdResult<Binary> {
         let subscriptions: Vec<String> = SUBSCRIPTIONS
             .prefix(&user_addr)
@@ -151,8 +151,8 @@ pub mod query {
             .collect();
 
         // Adjusted pagination logic to handle page 1 as the first page
-        let start = page.saturating_sub(1).saturating_mul(size);
-        let end = start.saturating_add(size);
+        let start = page.saturating_sub(1).saturating_mul(size) as usize;
+        let end = start.saturating_add(size as usize);
         // Query HUB_NAMES and HUBS based on subscriptions and pagination
         let hubs_info: Vec<Hub> = subscriptions[start..end.min(subscriptions.len())]
             .iter()
@@ -163,10 +163,10 @@ pub mod query {
         to_json_binary(&hubs_info.iter().map(|hub| &hub.name).collect::<Vec<_>>())
     }
 
-    pub fn query_hub_addresses(deps: Deps, page: usize, size: usize) -> StdResult<Binary> {
+    pub fn query_hub_addresses(deps: Deps, page: u64, size: u64) -> StdResult<Binary> {
         let hub_addresses = HUB_ADDRESS.load(deps.storage)?;
-        let start = page.saturating_sub(1).saturating_mul(size);
-        let end = std::cmp::min(start + size, hub_addresses.len());
+        let start = page.saturating_sub(1).saturating_mul(size) as usize;
+        let end = std::cmp::min(start + size as usize, hub_addresses.len());
         let paged_hub_addresses: Vec<String> = hub_addresses
             .iter()
             .skip(start)
@@ -181,8 +181,8 @@ pub mod query {
         deps: Deps,
         user_addr: Addr, // TODO: change to signature verify
         hub_addr: String,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     ) -> StdResult<Binary> {
         // Check if the user is subscribed to the hub
         let is_subscribed = SUBSCRIPTIONS
@@ -193,8 +193,8 @@ pub mod query {
 
         let posts = if is_subscribed {
             // If subscribed, paginate normally
-            let start = page.saturating_sub(1).saturating_mul(size);
-            let end = start.saturating_add(size).min(hub.posts.len());
+            let start = page.saturating_sub(1).saturating_mul(size) as usize;
+            let end = start.saturating_add(size as usize).min(hub.posts.len());
 
             if start >= hub.posts.len() {
                 Vec::new()

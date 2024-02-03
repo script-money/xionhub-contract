@@ -30,18 +30,18 @@ pub enum QueryMsg {
     },
     UserSubscriptions {
         user: Addr,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     },
     HubAddresses {
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     },
     HubPosts {
         user_addr: Addr,
         hub_addr: Addr,
-        page: usize,
-        size: usize,
+        page: u64,
+        size: u64,
     },
     PostLikes {
         post_id: String,
