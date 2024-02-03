@@ -10,7 +10,7 @@ pub enum ExecuteMsg {
         hub_name: String,
         need_pay: Coin,
     },
-    SubscribeToHub {
+    SubscribeHub {
         hub_addr: Addr,
     },
     CreatePost {

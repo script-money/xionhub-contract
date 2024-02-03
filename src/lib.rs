@@ -39,7 +39,7 @@ pub fn execute(
         ExecuteMsg::CreateHub { hub_name, need_pay } => {
             create_hub(deps, env, info, hub_name, need_pay)
         }
-        ExecuteMsg::SubscribeToHub { hub_addr } => {
+        ExecuteMsg::SubscribeHub { hub_addr } => {
             subscribe_to_hub(deps, info, hub_addr.into_string())
         }
         ExecuteMsg::CreatePost {

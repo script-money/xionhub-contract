@@ -75,7 +75,7 @@ impl XionHubContract {
         app.execute_contract(
             sender.clone(),
             self.0.clone(),
-            &ExecuteMsg::SubscribeToHub {
+            &ExecuteMsg::SubscribeHub {
                 hub_addr: hub_addr.clone(),
             },
             funds,
