@@ -26,3 +26,4 @@ pub const SUBSCRIPTIONS: Map<(&Addr, &str), bool> = Map::new("subscriptions");
 
 pub const HUB_ADDRESS: Item<Vec<String>> = Item::new("hub_address");
 pub const LIKES: Map<&str, u64> = Map::new("likes");
+pub const USER_LIKES: Map<(&Addr, &str), bool> = Map::new("user_likes");

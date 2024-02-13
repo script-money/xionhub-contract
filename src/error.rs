@@ -26,4 +26,7 @@ pub enum ContractError {
 
     #[error("PostAlreadyExists")]
     PostAlreadyExists { id: String },
+
+    #[error("PostAlreadyLiked")]
+    PostAlreadyLiked { id: String },
 }

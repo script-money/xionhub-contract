@@ -9,7 +9,7 @@ pub mod exec {
 
     use crate::{
         error::ContractError,
-        state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS},
+        state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS, USER_LIKES},
     };
 
     pub fn create_hub(
@@ -118,21 +118,26 @@ pub mod exec {
 
     pub fn like_post(
         deps: DepsMut,
-        _info: MessageInfo,
+        info: MessageInfo,
         post_id: String,
     ) -> Result<Response, ContractError> {
         let mut likes = LIKES.load(deps.storage, &post_id)?;
 
-        likes += 1;
-        // TODO: if user already liked, return error
+        if USER_LIKES.has(deps.storage, (&info.sender, &post_id)) {
+            return Err(ContractError::PostAlreadyLiked { id: post_id });
+        }
 
+        likes += 1;
         LIKES.save(deps.storage, &post_id, &likes)?;
+
+        USER_LIKES.save(deps.storage, (&info.sender, &post_id), &true)?;
+
         Ok(Response::new().add_attribute("method", "like_post"))
     }
 }
 
 pub mod query {
-    use crate::state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS};
+    use crate::state::{Hub, Post, HUBS, HUB_ADDRESS, LIKES, SUBSCRIPTIONS, USER_LIKES};
     use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, Order, StdResult};
 
     pub fn query_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
@@ -226,5 +231,12 @@ pub mod query {
     pub fn query_user_has_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
         let has_hub = HUBS.load(deps.storage, &creator.as_str()).is_ok();
         to_json_binary(&has_hub)
+    }
+
+    pub fn query_user_post_liked(deps: Deps, user: Addr, post_id: String) -> StdResult<Binary> {
+        let liked = USER_LIKES
+            .load(deps.storage, (&user, &post_id))
+            .unwrap_or(false);
+        to_json_binary(&liked)
     }
 }

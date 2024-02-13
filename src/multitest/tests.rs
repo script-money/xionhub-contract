@@ -272,6 +272,21 @@ fn test_like_post() {
 
     let resp = contract.query_post_likes(&app, &post_id).unwrap();
     assert_eq!(resp, 1);
+
+    let like_post_error = contract.like_post(&mut app, &user, &post_id).unwrap_err();
+    assert_eq!(
+        like_post_error,
+        ContractError::PostAlreadyLiked {
+            id: post_id.to_string()
+        }
+    );
+
+    assert_eq!(
+        contract
+            .query_user_post_liked(&app, &user, &post_id)
+            .unwrap(),
+        true
+    );
 }
 
 #[test]

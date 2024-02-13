@@ -202,6 +202,17 @@ impl XionHubContract {
             },
         )
     }
+
+    #[track_caller]
+    pub fn query_user_post_liked(&self, app: &App, user: &Addr, post_id: &Uuid) -> StdResult<bool> {
+        app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::UserPostLiked {
+                user: user.clone(),
+                post_id: post_id.to_string(),
+            },
+        )
+    }
 }
 
 impl From<XionHubContract> for Addr {
