@@ -111,6 +111,7 @@ pub mod exec {
 
         HUBS.save(deps.storage, hub_id, &hub)?;
         LIKES.save(deps.storage, &post_id, &0u64)?;
+        SUBSCRIPTIONS.save(deps.storage, (&info.sender, hub_id), &true)?;
 
         Ok(Response::new().add_attribute("method", "create_post"))
     }
@@ -123,6 +124,7 @@ pub mod exec {
         let mut likes = LIKES.load(deps.storage, &post_id)?;
 
         likes += 1;
+        // TODO: if user already liked, return error
 
         LIKES.save(deps.storage, &post_id, &likes)?;
         Ok(Response::new().add_attribute("method", "like_post"))
@@ -135,6 +137,7 @@ pub mod query {
 
     pub fn query_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
         let hub = HUBS.load(deps.storage, &creator.as_str())?;
+        // TODO: should return newest or none Posts, not all
         to_json_binary(&hub)
     }
 
@@ -218,5 +221,10 @@ pub mod query {
     pub fn query_post_likes(deps: Deps, post_id: String) -> StdResult<Binary> {
         let likes = LIKES.load(deps.storage, &post_id)?;
         to_json_binary(&likes)
+    }
+
+    pub fn query_user_has_hub(deps: Deps, creator: Addr) -> StdResult<Binary> {
+        let has_hub = HUBS.load(deps.storage, &creator.as_str()).is_ok();
+        to_json_binary(&has_hub)
     }
 }

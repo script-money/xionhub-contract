@@ -192,6 +192,16 @@ impl XionHubContract {
             },
         )
     }
+
+    #[track_caller]
+    pub fn query_user_has_hub(&self, app: &App, creator: &Addr) -> StdResult<bool> {
+        app.wrap().query_wasm_smart(
+            self.0.clone(),
+            &QueryMsg::UserHasHub {
+                creator: creator.clone(),
+            },
+        )
+    }
 }
 
 impl From<XionHubContract> for Addr {

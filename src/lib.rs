@@ -9,7 +9,8 @@ pub mod multitest;
 use contract::{
     exec::{create_hub, create_post, like_post, subscribe_to_hub},
     query::{
-        query_hub, query_hub_addresses, query_hub_posts, query_post_likes, query_user_subscriptions,
+        query_hub, query_hub_addresses, query_hub_posts, query_post_likes, query_user_has_hub,
+        query_user_subscriptions,
     },
 };
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
@@ -66,5 +67,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             size,
         } => query_hub_posts(deps, user_addr, hub_addr.into_string(), page, size),
         QueryMsg::PostLikes { post_id } => query_post_likes(deps, post_id),
+        QueryMsg::UserHasHub { creator } => query_user_has_hub(deps, creator),
     }
 }

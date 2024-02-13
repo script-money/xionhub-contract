@@ -107,6 +107,9 @@ fn test_user_subscriptions_with_token() {
         .create_hub(&mut app, &creator, hub_name, coin(100000, XION))
         .unwrap();
 
+    assert_eq!(contract.query_user_has_hub(&app, &creator).unwrap(), true);
+    assert_eq!(contract.query_user_has_hub(&app, &user2).unwrap(), false);
+
     // Test InsufficientFunds when subscription fee is not met
     let err = contract
         .subscribe_to_hub(&mut app, &user2, &creator, &[])

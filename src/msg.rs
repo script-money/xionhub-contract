@@ -46,4 +46,7 @@ pub enum QueryMsg {
     PostLikes {
         post_id: String,
     },
+    UserHasHub {
+        creator: Addr,
+    },
 }
