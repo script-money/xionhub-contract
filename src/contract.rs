@@ -29,7 +29,7 @@ pub mod exec {
             creator: info.sender.clone(),
             name: hub_name,
             payment: need_pay,
-            subscribers: vec![],
+            subscribers: vec![info.sender.clone()],
             posts: vec![],
         };
         HUBS.save(deps.storage, &sender_addr_str, &new_hub)?;

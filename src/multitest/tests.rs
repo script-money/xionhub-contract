@@ -30,7 +30,7 @@ fn test_create_hub() {
             creator: creator.clone(),
             name: "Test Channel".to_string(),
             payment: coin(0, XION),
-            subscribers: vec![],
+            subscribers: vec![creator.clone()],
             posts: vec![]
         }
     );
@@ -74,10 +74,10 @@ fn test_user_subscriptions() {
     assert_eq!(
         resp,
         Hub {
-            creator: creator,
+            creator: creator.clone(),
             name: "XionHub Office Channel".to_string(),
             payment: coin(0, XION),
-            subscribers: vec![user],
+            subscribers: vec![creator.clone(), user],
             posts: vec![]
         }
     );
